@@ -8,16 +8,20 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { motion, Variants } from "framer-motion"
+import { Edit, Trash2 } from "lucide-react"
 
 export default function ProblemsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [problems, setProblems] = useState([])
+  const [problems, setProblems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   
   const [query, setQuery] = useState("")
-  const [platform, setPlatform] = useState("all")
-  const [difficulty, setDifficulty] = useState("all")
+  const [platform, setPlatform] = useState("All Platforms")
+  const [difficulty, setDifficulty] = useState("All Difficulties")
+  const [solvedBy, setSolvedBy] = useState("All")
+  const [tag, setTag] = useState("")
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,25 +33,60 @@ export default function ProblemsPage() {
     if (status === "authenticated") {
       fetchProblems()
     }
-  }, [status, query, platform, difficulty])
+  }, [status, query, platform, difficulty, solvedBy, tag])
 
   const fetchProblems = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (query) params.append("query", query)
-      if (platform && platform !== "all") params.append("platform", platform)
-      if (difficulty && difficulty !== "all") params.append("difficulty", difficulty)
+      if (platform && platform !== "All Platforms" && platform !== "all") params.append("platform", platform)
+      if (difficulty && difficulty !== "All Difficulties" && difficulty !== "all") params.append("difficulty", difficulty)
+      if (solvedBy && solvedBy !== "All" && solvedBy !== "all") params.append("solvedBy", solvedBy)
+      if (tag) params.append("tag", tag)
       
       const res = await fetch(`/api/problems?${params.toString()}`)
       const data = await res.json()
-      setProblems(data || [])
+      
+      if (Array.isArray(data)) {
+        setProblems(data)
+      } else {
+        console.error("API Error:", data)
+        setProblems([])
+      }
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this problem?")) return;
+    try {
+      const res = await fetch(`/api/problems/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setProblems(problems.filter(p => p.id !== id))
+      } else {
+        console.error("Failed to delete problem")
+      }
+    } catch (e) {
+      console.error("Failed to delete problem:", e)
+    }
+  }
+
+  const container: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const item: Variants = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  };
 
   if (status === "loading") return <div className="p-8 text-center">Loading...</div>
 
@@ -60,32 +99,49 @@ export default function ProblemsPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border shadow-sm">
+      <div className="flex flex-wrap gap-4 bg-card p-4 rounded-xl border shadow-sm items-center">
         <Input 
-          placeholder="Search by title or tags..." 
+          placeholder="Search by title..." 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="max-w-xs"
+          className="max-w-[200px]"
         />
-        <Select value={platform} onValueChange={(val) => setPlatform(val || "all")}>
+        <Input 
+          placeholder="Filter by tag..." 
+          value={tag}
+          onChange={(e) => setTag(e.target.value)}
+          className="max-w-[150px]"
+        />
+        <Select value={platform} onValueChange={(val) => setPlatform(val || "All Platforms")}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Platform" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Platforms</SelectItem>
+            <SelectItem value="All Platforms">All Platforms</SelectItem>
             <SelectItem value="LeetCode">LeetCode</SelectItem>
             <SelectItem value="Codeforces">Codeforces</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={difficulty} onValueChange={(val) => setDifficulty(val || "all")}>
-          <SelectTrigger className="w-[180px]">
+        <Select value={difficulty} onValueChange={(val) => setDifficulty(val || "All Difficulties")}>
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Difficulty" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Difficulties</SelectItem>
+            <SelectItem value="All Difficulties">All Difficulties</SelectItem>
             <SelectItem value="Easy">Easy</SelectItem>
             <SelectItem value="Medium">Medium</SelectItem>
             <SelectItem value="Hard">Hard</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={solvedBy} onValueChange={(val) => setSolvedBy(val || "All")}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Solved By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All</SelectItem>
+            <SelectItem value="by me">By Me</SelectItem>
+            <SelectItem value="editorial">Editorial</SelectItem>
+            <SelectItem value="AI assisted">AI Assisted</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -101,10 +157,16 @@ export default function ProblemsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div 
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {problems.map((problem: any) => (
-            <Card key={problem.id} className="overflow-hidden hover:shadow-md transition-shadow group">
-              <CardHeader className="pb-3 border-b bg-muted/20">
+            <motion.div key={problem.id} variants={item}>
+              <Card className="h-full overflow-hidden border-white/10 bg-card/40 backdrop-blur-xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(59,130,246,0.12)] hover:border-blue-500/30 transition-all duration-300 group">
+                <CardHeader className="pb-3 border-b border-white/5 bg-white/5 dark:bg-black/20">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">
                     <a href={problem.url} target="_blank" rel="noreferrer" className="hover:underline text-primary">
@@ -121,7 +183,11 @@ export default function ProblemsPage() {
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground flex items-center justify-between">
-                  <span>{problem.platform}</span>
+                  <div className="flex gap-2">
+                    <span>{problem.platform}</span>
+                    <span>•</span>
+                    <span className="capitalize">{problem.solvedBy}</span>
+                  </div>
                   <span>{new Date(problem.createdAt).toLocaleDateString()}</span>
                 </div>
               </CardHeader>
@@ -152,10 +218,27 @@ export default function ProblemsPage() {
                     <p className="text-sm text-muted-foreground line-clamp-2">{problem.mistakes}</p>
                   </div>
                 )}
+                
+                <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
+                  <Link href={`/problems/${problem.id}/edit`}>
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-primary">
+                      <Edit className="h-4 w-4 mr-1" /> Edit
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 px-2 text-muted-foreground hover:text-red-500"
+                    onClick={() => handleDelete(problem.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                  </Button>
+                </div>
               </CardContent>
-            </Card>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   )

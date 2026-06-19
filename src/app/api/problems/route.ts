@@ -14,6 +14,8 @@ export async function GET(request: Request) {
     const platform = searchParams.get('platform');
     const difficulty = searchParams.get('difficulty');
     const query = searchParams.get('query');
+    const solvedBy = searchParams.get('solvedBy');
+    const tag = searchParams.get('tag');
 
     const where: any = {
       // @ts-ignore
@@ -22,6 +24,10 @@ export async function GET(request: Request) {
 
     if (platform) where.platform = platform;
     if (difficulty) where.difficulty = difficulty;
+    if (solvedBy) where.solvedBy = solvedBy;
+    if (tag) {
+      where.tags = { has: tag };
+    }
     if (query) {
       where.OR = [
         { title: { contains: query, mode: 'insensitive' } },
@@ -60,6 +66,7 @@ export async function POST(request: Request) {
         title: data.title,
         platform: data.platform,
         difficulty: data.difficulty,
+        solvedBy: data.solvedBy || "by me",
         tags: data.tags || [],
         keyInsights: data.keyInsights,
         mistakes: data.mistakes

@@ -1,20 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-export default function NewProblemPage() {
+export default function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { status } = useSession()
   const router = useRouter()
   
   const [url, setUrl] = useState("")
-  const [loadingMeta, setLoadingMeta] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
   
@@ -34,31 +35,36 @@ export default function NewProblemPage() {
     }
   }, [status, router])
 
-  const fetchMetadata = async () => {
-    if (!url) return
-    setLoadingMeta(true)
+  useEffect(() => {
+    if (status === "authenticated" && id) {
+      fetchProblemDetails()
+    }
+  }, [status, id])
+
+  const fetchProblemDetails = async () => {
+    setLoading(true)
     setError("")
     try {
-      const res = await fetch("/api/fetch-metadata", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url })
-      })
+      const res = await fetch(`/api/problems/${id}`)
+      if (!res.ok) {
+        throw new Error("Failed to fetch problem details")
+      }
       const data = await res.json()
       
-      if (!res.ok) throw new Error(data.error || "Failed to fetch metadata")
-      
-      setFormData(prev => ({
-        ...prev,
+      setUrl(data.url || "")
+      setFormData({
         title: data.title || "",
         platform: data.platform || "",
         difficulty: data.difficulty || "Medium",
-        tags: data.tags || []
-      }))
+        solvedBy: data.solvedBy || "by me",
+        tags: data.tags || [],
+        keyInsights: data.keyInsights || "",
+        mistakes: data.mistakes || ""
+      })
     } catch (e: any) {
       setError(e.message)
     } finally {
-      setLoadingMeta(false)
+      setLoading(false)
     }
   }
 
@@ -68,8 +74,8 @@ export default function NewProblemPage() {
     setError("")
     
     try {
-      const res = await fetch("/api/problems", {
-        method: "POST",
+      const res = await fetch(`/api/problems/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
@@ -79,7 +85,7 @@ export default function NewProblemPage() {
       
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to log problem")
+        throw new Error(data.error || "Failed to update problem")
       }
       
       router.push("/problems")
@@ -89,33 +95,28 @@ export default function NewProblemPage() {
     }
   }
 
-  if (status === "loading") return <div className="p-8 text-center">Loading...</div>
+  if (status === "loading" || loading) return <div className="p-8 text-center">Loading...</div>
 
   return (
     <div className="max-w-2xl mx-auto py-8">
       <Card className="border shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Log a New Problem</CardTitle>
+          <CardTitle className="text-2xl">Edit Problem</CardTitle>
           <CardDescription>
-            Paste the problem URL to automatically fetch its details, then add your insights.
+            Update your insights, mistakes, or other problem details.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="url">Problem URL</Label>
-              <div className="flex gap-2">
-                <Input 
-                  id="url"
-                  placeholder="https://leetcode.com/problems/two-sum/" 
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                />
-                <Button type="button" onClick={fetchMetadata} disabled={loadingMeta || !url}>
-                  {loadingMeta ? "Fetching..." : "Fetch"}
-                </Button>
-              </div>
+              <Input 
+                id="url"
+                placeholder="https://leetcode.com/problems/two-sum/" 
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+              />
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
 
@@ -152,12 +153,19 @@ export default function NewProblemPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="difficulty">Difficulty</Label>
-                <Input 
-                  id="difficulty"
-                  value={formData.difficulty}
-                  readOnly
-                  className="bg-muted cursor-not-allowed"
-                />
+                <Select 
+                  value={formData.difficulty} 
+                  onValueChange={(val) => setFormData({...formData, difficulty: val || "Medium"})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Easy">Easy</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -210,9 +218,14 @@ export default function NewProblemPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Saving..." : "Log Problem"}
-            </Button>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4 border-t border-white/5">
+              <Button type="button" variant="outline" onClick={() => router.push("/problems")} disabled={submitting}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

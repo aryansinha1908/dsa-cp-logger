@@ -60,10 +60,7 @@ async function fetchLeetCodeData(url: string) {
 
 async function fetchCodeforcesData(url: string) {
   try {
-    // URL forms: 
-    // https://codeforces.com/problemset/problem/1900/A
-    // https://codeforces.com/contest/1900/problem/A
-    let contestId, index;
+    let contestId: string, index: string;
     const problemsetMatch = url.match(/problemset\/problem\/(\d+)\/([A-Z0-9]+)/);
     const contestMatch = url.match(/contest\/(\d+)\/problem\/([A-Z0-9]+)/);
 
@@ -77,12 +74,11 @@ async function fetchCodeforcesData(url: string) {
       throw new Error('Invalid Codeforces URL');
     }
 
-    // Fetch contest standings with 1 row to get problem metadata
-    const res = await axios.get(`https://codeforces.com/api/contest.standings?contestId=${contestId}&from=1&count=1`);
+    const res = await axios.get('https://codeforces.com/api/problemset.problems');
     const problems = res.data.result.problems;
-    const problem = problems.find((p: any) => p.index === index);
+    const problem = problems.find((p: any) => p.contestId == contestId && p.index == index);
 
-    if (!problem) throw new Error('Problem not found');
+    if (!problem) throw new Error('Problem not found on Codeforces');
 
     return NextResponse.json({
       title: problem.name,

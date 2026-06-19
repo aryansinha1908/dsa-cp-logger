@@ -128,3 +128,15 @@
     @apply font-sans;
   }
 }
+
+/* Tour Fallbacks and base styles */
+@supports not (anchor-name: --foo) {
+  .tour-popover {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    /* When anchor positioning is not supported, just position fixed at the bottom center */
+  }
+}

@@ -62,6 +62,7 @@ model Problem {
   platform    String
   difficulty  String
   tags        String[]
+  solvedBy    String   @default("by me")
   keyInsights String?
   mistakes    String?
   createdAt   DateTime @default(now())
