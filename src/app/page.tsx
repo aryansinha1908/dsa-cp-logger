@@ -4,17 +4,34 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion, Variants } from "framer-motion";
-import Image from "next/image";
 import { TourProvider, useTour } from "@/components/tour-provider";
 import { TourStep } from "@/components/tour-step";
 import { SiLeetcode, SiCodeforces, SiCodechef } from "react-icons/si";
-import { Code2 } from "lucide-react";
+import { Code2, FileText, Filter, Lightbulb, ArrowRight } from "lucide-react";
 
 const PLATFORMS = [
-  { name: 'LeetCode', icon: SiLeetcode, color: 'text-yellow-500 group-hover:text-yellow-400' },
-  { name: 'Codeforces', icon: SiCodeforces, color: 'text-blue-500 group-hover:text-blue-400' },
-  { name: 'AtCoder', icon: Code2, color: 'text-neutral-500 dark:text-neutral-300 group-hover:text-black dark:group-hover:text-white' },
-  { name: 'CodeChef', icon: SiCodechef, color: 'text-orange-700 dark:text-orange-600 group-hover:text-orange-500' }
+  { name: 'LeetCode', icon: SiLeetcode },
+  { name: 'Codeforces', icon: SiCodeforces },
+  { name: 'AtCoder', icon: Code2 },
+  { name: 'CodeChef', icon: SiCodechef },
+];
+
+const FEATURES = [
+  {
+    icon: FileText,
+    title: "Auto-fetch metadata",
+    desc: "Paste a LeetCode or Codeforces URL and get the title, difficulty, and tags instantly.",
+  },
+  {
+    icon: Filter,
+    title: "Smart filters",
+    desc: "Filter by platform, difficulty, tags, or how you solved it — find any problem in seconds.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Insight tracking",
+    desc: "Record key insights and mistakes per problem. Review them before interviews.",
+  },
 ];
 
 function HomeContent() {
@@ -24,233 +41,153 @@ function HomeContent() {
     setTotalSteps(3);
   }, [setTotalSteps]);
 
-  const container: Variants = {
+  const stagger: Variants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
-
-  const item: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  const fadeUp: Variants = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
   };
 
   return (
-    <div className="w-full relative">
-      
-      {/* Background Image Container with Glass Blur */}
-      <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-auto">
-        <Image 
-          src="/images/bg.png" 
-          alt="Ambient Background" 
-          fill
-          priority
-          className="object-cover opacity-80"
-        />
-        {/* Glassmorphism overlay */}
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[60px]" />
-      </div>
+    <div className="w-full">
 
-      <div className="flex flex-col items-center justify-center min-h-[90vh] text-center space-y-12 relative pointer-events-none pt-20 pb-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-6 max-w-3xl z-10 relative"
-        >
-          <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight bg-gradient-to-br from-white via-blue-100 to-teal-400 dark:from-white dark:via-blue-200 dark:to-teal-500 bg-clip-text text-transparent drop-shadow-sm pb-2 pointer-events-auto">
-            Master Your Coding Interviews
-          </h1>
-          <p className="text-xl sm:text-2xl text-muted-foreground font-medium px-4 pointer-events-auto">
-            Log, track, and analyze your solved DSA and Competitive Programming problems. 
-            Auto-fetch problem details seamlessly.
-          </p>
-          <div className="pt-4 pointer-events-auto flex justify-center gap-4">
-             <Button variant="outline" onClick={startTour} className="rounded-full bg-background/50 backdrop-blur-md hover:bg-muted/50 border-border/50">
-               Take a Tour
-             </Button>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="flex flex-col sm:flex-row gap-4 z-10 relative pointer-events-auto"
-        >
-          <Link href="/problems" style={{ anchorName: '--tour-btn-view' } as any}>
-            <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.5)] transition-shadow">
-              View My Problems
+      {/* Hero */}
+      <section className="py-28 md:py-36 border-b border-border">
+        <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-3xl">
+          <motion.p variants={fadeUp} className="text-sm font-mono text-primary uppercase tracking-widest mb-8">
+            DSA / CP Logger
+          </motion.p>
+          <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-bold tracking-tight text-foreground leading-tight mb-8">
+            Build your personal<br className="hidden md:block" /> problem archive.
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-xl text-muted-foreground max-w-xl mb-12 leading-relaxed">
+            Log every DSA and competitive programming problem you solve. Auto-fetch metadata, track insights and mistakes, review before interviews.
+          </motion.p>
+          <motion.div variants={fadeUp} className="flex items-center gap-4 flex-wrap">
+            <Button size="lg" className="h-12 px-8 text-base" asChild style={{ anchorName: '--tour-btn-new' } as any}>
+              <Link href="/problems/new">Log a problem <ArrowRight className="ml-2 w-4 h-4" /></Link>
             </Button>
-          </Link>
-          <Link href="/problems/new" style={{ anchorName: '--tour-btn-new' } as any}>
-            <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-border/50 bg-background/50 backdrop-blur-md hover:bg-muted/50">
-              Log New Problem
+            <Button size="lg" variant="outline" className="h-12 px-8 text-base" asChild style={{ anchorName: '--tour-btn-view' } as any}>
+              <Link href="/problems">View my log</Link>
             </Button>
-          </Link>
+            <Button size="lg" variant="ghost" className="h-12 px-6 text-base text-muted-foreground" onClick={startTour}>
+              Take a tour
+            </Button>
+          </motion.div>
         </motion.div>
+      </section>
 
-        <motion.div 
-          variants={container}
+      {/* Features */}
+      <section className="py-24 border-b border-border">
+        <motion.div
+          variants={stagger}
           initial="hidden"
-          animate="show"
-          style={{ anchorName: '--tour-cards' } as any}
-          className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl text-left px-4 z-10 relative pointer-events-auto"
-        >
-          <motion.div variants={item} className="p-8 rounded-3xl bg-card/40 backdrop-blur-xl border border-white/10 shadow-xl hover:bg-card/60 transition-colors">
-            <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mb-6 text-blue-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-            </div>
-            <h3 className="font-semibold text-xl mb-3">Automated Metadata</h3>
-            <p className="text-muted-foreground leading-relaxed">Paste a LeetCode or Codeforces URL and we instantly fetch the problem name, difficulty, and tags.</p>
-          </motion.div>
-          
-          <motion.div variants={item} className="p-8 rounded-3xl bg-card/40 backdrop-blur-xl border border-white/10 shadow-xl hover:bg-card/60 transition-colors">
-            <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center mb-6 text-teal-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            </div>
-            <h3 className="font-semibold text-xl mb-3">Smart Organization</h3>
-            <p className="text-muted-foreground leading-relaxed">Filter your problems by platform, difficulty, and search through your past logs easily.</p>
-          </motion.div>
-          
-          <motion.div variants={item} className="p-8 rounded-3xl bg-card/40 backdrop-blur-xl border border-white/10 shadow-xl hover:bg-card/60 transition-colors">
-            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-6 text-purple-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <h3 className="font-semibold text-xl mb-3">Insight Tracking</h3>
-            <p className="text-muted-foreground leading-relaxed">Record key insights and mistakes to revise efficiently before your upcoming interviews.</p>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* Supported Platforms Section */}
-      <div className="py-24 px-4 relative z-10 pointer-events-auto border-t border-white/5">
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="max-w-5xl mx-auto text-center"
-        >
-          <h2 className="text-3xl sm:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-            Supported Platforms
-          </h2>
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Seamlessly integrate with the most popular coding platforms. Just drop a link, and we'll do the rest.
-          </p>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {PLATFORMS.map((platform, idx) => {
-              const Icon = platform.icon;
-              return (
-                <motion.div 
-                  key={platform.name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1, duration: 0.5 }}
-                  className="group p-6 rounded-2xl bg-card/30 backdrop-blur-md border border-white/10 hover:bg-card/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-white/5 transition-all flex flex-col items-center justify-center font-semibold text-lg gap-4"
-                >
-                  <Icon className={`w-12 h-12 transition-colors duration-300 ${platform.color}`} />
-                  <span>{platform.name}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Interactive Workflow Section */}
-      <div className="py-24 px-4 relative z-10 pointer-events-auto border-t border-white/5 bg-black/20">
-        <div className="max-w-5xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl sm:text-5xl font-bold mb-6">How It Works</h2>
-            <p className="text-xl text-muted-foreground">Three simple steps to build your ultimate problem-solving repository.</p>
-          </motion.div>
-
-          <div className="space-y-12">
-            {[
-              { step: '01', title: 'Solve & Submit', desc: 'Conquer a problem on your favorite platform and copy the URL.' },
-              { step: '02', title: 'Paste & Fetch', desc: 'Paste the link here. Our parsers automatically pull the title, difficulty, and topic tags.' },
-              { step: '03', title: 'Reflect & Revise', desc: 'Add your custom notes, approaches, and code snippets. Come back to review before interviews.' }
-            ].map((item, idx) => (
-              <motion.div 
-                key={item.step}
-                initial={{ opacity: 0, x: idx % 2 === 0 ? -50 : 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.6 }}
-                className={`flex flex-col sm:flex-row items-center gap-8 ${idx % 2 !== 0 ? 'sm:flex-row-reverse' : ''}`}
-              >
-                <div className="w-24 h-24 shrink-0 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-3xl font-bold text-blue-400">
-                  {item.step}
-                </div>
-                <div className={`flex-1 ${idx % 2 !== 0 ? 'sm:text-right' : 'sm:text-left'} text-center`}>
-                  <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
-                  <p className="text-lg text-muted-foreground">{item.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="py-32 px-4 relative z-10 pointer-events-auto text-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          whileInView="show"
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="max-w-3xl mx-auto space-y-8 p-12 rounded-[3rem] bg-gradient-to-br from-blue-500/10 to-teal-500/10 border border-white/10 backdrop-blur-xl relative overflow-hidden"
+          style={{ anchorName: '--tour-cards' } as any}
+          className="grid grid-cols-1 md:grid-cols-3 gap-12"
         >
-          <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-full" />
-          <h2 className="text-4xl sm:text-5xl font-bold relative z-10">Ready to level up?</h2>
-          <p className="text-xl text-muted-foreground relative z-10">
-            Start building your personal library of solved problems today. It's free and takes seconds.
-          </p>
-          <div className="pt-4 relative z-10">
-            <Link href="/problems/new">
-              <Button size="lg" className="h-16 px-10 text-xl rounded-full shadow-[0_0_40px_rgba(59,130,246,0.3)] hover:shadow-[0_0_60px_rgba(59,130,246,0.5)] transition-all hover:scale-105">
-                Log Your First Problem
-              </Button>
-            </Link>
-          </div>
+          {FEATURES.map(({ icon: Icon, title, desc }) => (
+            <motion.div key={title} variants={fadeUp} className="space-y-4">
+              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg text-foreground">{title}</h3>
+              <p className="text-base text-muted-foreground leading-relaxed">{desc}</p>
+            </motion.div>
+          ))}
         </motion.div>
-      </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-24 border-b border-border">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl font-bold tracking-tight mb-4">How it works</h2>
+          <p className="text-lg text-muted-foreground">Three steps to build your archive.</p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { n: "01", title: "Solve & copy the URL", desc: "Finish a problem on LeetCode, Codeforces, or any platform and copy the problem URL." },
+            { n: "02", title: "Paste & auto-fetch", desc: "Paste the link — we pull the title, difficulty, and topic tags from the platform automatically." },
+            { n: "03", title: "Add notes & review", desc: "Write your key insight and any mistakes. Come back to review the whole log before interviews." },
+          ].map(({ n, title, desc }, idx) => (
+            <motion.div
+              key={n}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1, duration: 0.5 }}
+              className="p-8 rounded-lg border border-border bg-card space-y-4 text-center"
+            >
+              <span className="font-mono text-sm text-primary">{n}</span>
+              <h3 className="font-semibold text-lg text-foreground">{title}</h3>
+              <p className="text-base text-muted-foreground leading-relaxed">{desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Platforms */}
+      <section className="py-24 border-b border-border">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <h2 className="text-4xl font-bold tracking-tight mb-4">Supported platforms</h2>
+          <p className="text-lg text-muted-foreground">Auto-fetch works on LeetCode and Codeforces. Others can be logged manually.</p>
+        </motion.div>
+        <div className="flex flex-wrap justify-center gap-4">
+          {PLATFORMS.map(({ name, icon: Icon }, idx) => (
+            <motion.div
+              key={name}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.05, duration: 0.3 }}
+              className="flex items-center gap-3 px-6 py-3.5 rounded-md border border-border bg-card text-base font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+            >
+              <Icon className="w-5 h-5" />
+              {name}
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-32">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="space-y-6 text-center flex flex-col items-center"
+        >
+          <h2 className="text-4xl font-bold tracking-tight">Ready to start?</h2>
+          <p className="text-lg text-muted-foreground max-w-md leading-relaxed">
+            It's free. Takes 10 seconds to log a problem. Start building the habit now.
+          </p>
+          <Button size="lg" asChild>
+            <Link href="/problems/new">Log your first problem <ArrowRight className="ml-2 w-4 h-4" /></Link>
+          </Button>
+        </motion.div>
+      </section>
 
       {/* Tour Steps */}
-      <TourStep 
-        step={1} 
-        title="Log a Problem" 
-        content="Start by logging a new problem you just solved. Paste the URL and we'll fetch the details automatically." 
-        anchorName="--tour-btn-new"
-        positionArea="bottom span-all"
-      />
-      <TourStep 
-        step={2} 
-        title="View Your History" 
-        content="Once logged, come here to see all your solved problems, filter them by difficulty or tags, and review your notes." 
-        anchorName="--tour-btn-view"
-        positionArea="top span-all"
-      />
-      <TourStep 
-        step={3} 
-        title="Core Features" 
-        content="Our platform automatically fetches metadata, helps you organize, and lets you track insights so you can master your interviews!" 
-        anchorName="--tour-cards"
-        positionArea="top center"
-      />
+      <TourStep step={1} title="Log a problem" content="Paste a URL and we fetch everything automatically. Add your insights and you're done." anchorName="--tour-btn-new" positionArea="bottom span-all" />
+      <TourStep step={2} title="View your log" content="See all your solved problems. Filter by difficulty, platform, tags, or how you solved it." anchorName="--tour-btn-view" positionArea="top span-all" />
+      <TourStep step={3} title="Core features" content="Auto-fetch, smart filters, and insight tracking — the full loop from solve to review." anchorName="--tour-cards" positionArea="top center" />
     </div>
   );
 }
@@ -262,4 +199,3 @@ export default function Home() {
     </TourProvider>
   );
 }
-

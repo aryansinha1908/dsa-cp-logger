@@ -3,35 +3,34 @@
 import Link from "next/link"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
+import { BookOpen } from "lucide-react"
 
 export function Navbar() {
   const { data: session } = useSession()
 
   return (
-    <nav className="border-b border-border/40 bg-background/40 backdrop-blur-xl sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="font-bold text-xl tracking-tight flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
-          </div>
+    <nav className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
+      <div className="w-full px-6 md:px-10 h-16 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 font-semibold text-base tracking-tight text-foreground hover:text-primary transition-colors">
+          <BookOpen className="w-5 h-5 text-primary" />
           DSA Logger
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           {session ? (
             <>
-              <Link href="/problems">
-                <Button variant="ghost">My Problems</Button>
-              </Link>
-              <Link href="/problems/new">
-                <Button variant="default">Log Problem</Button>
-              </Link>
-              <Button variant="outline" onClick={() => signOut()}>
-                Logout
+              <Button variant="ghost" asChild>
+                <Link href="/problems">Problems</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/problems/new">Log Problem</Link>
+              </Button>
+              <Button variant="ghost" onClick={() => signOut()} className="text-muted-foreground">
+                Sign out
               </Button>
             </>
           ) : (
-            <Button onClick={() => signIn("google")}>Sign In</Button>
+            <Button onClick={() => signIn("google")}>Sign in</Button>
           )}
         </div>
       </div>

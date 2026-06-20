@@ -1,244 +1,321 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { motion, Variants } from "framer-motion"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, ExternalLink, Plus, ChevronDown, Check, X } from "lucide-react"
+
+const DIFFICULTY_STYLE: Record<string, string> = {
+  Easy: "text-emerald-400 bg-emerald-400/10",
+  Medium: "text-yellow-400 bg-yellow-400/10",
+  Hard: "text-red-400 bg-red-400/10",
+}
+
+function TagFilter({ allTags, selectedTags, onChange }: {
+  allTags: string[]
+  selectedTags: string[]
+  onChange: (tags: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const filtered = allTags.filter(t => t.toLowerCase().includes(search.toLowerCase()))
+
+  const toggle = (tag: string) => {
+    onChange(selectedTags.includes(tag) ? selectedTags.filter(t => t !== tag) : [...selectedTags, tag])
+  }
+
+  const label = selectedTags.length === 0
+    ? "All tags"
+    : selectedTags.length === 1
+    ? selectedTags[0]
+    : `${selectedTags.length} tags`
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex h-9 w-44 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+      >
+        <span className="truncate text-left flex-1 text-sm">
+          {selectedTags.length === 0
+            ? <span className="text-muted-foreground">All tags</span>
+            : label}
+        </span>
+        <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 w-56 rounded-md border border-border bg-popover shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-border">
+            <Input
+              placeholder="Search tags…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="h-7 text-xs"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-52 overflow-y-auto p-1">
+            {filtered.length === 0 ? (
+              <p className="text-xs text-muted-foreground px-2 py-3 text-center">No tags found</p>
+            ) : (
+              filtered.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggle(tag)}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+                >
+                  <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selectedTags.includes(tag) ? "bg-primary border-primary" : "border-input"}`}>
+                    {selectedTags.includes(tag) && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                  </div>
+                  {tag}
+                </button>
+              ))
+            )}
+          </div>
+          {selectedTags.length > 0 && (
+            <div className="p-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                className="flex w-full items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-3 h-3" /> Clear selection
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function ProblemsPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [problems, setProblems] = useState<any[]>([])
+  const [allProblems, setAllProblems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  
+
   const [query, setQuery] = useState("")
-  const [platform, setPlatform] = useState("All Platforms")
-  const [difficulty, setDifficulty] = useState("All Difficulties")
-  const [solvedBy, setSolvedBy] = useState("All")
-  const [tag, setTag] = useState("")
+  const [platform, setPlatform] = useState("")
+  const [difficulty, setDifficulty] = useState("")
+  const [solvedBy, setSolvedBy] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+  // All unique tags from the user's problems
+  const allTags = [...new Set(allProblems.flatMap(p => p.tags ?? []))].sort()
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/")
-    }
+    if (status === "unauthenticated") router.push("/")
   }, [status, router])
 
+  // Fetch all problems once to build tag list
   useEffect(() => {
     if (status === "authenticated") {
-      fetchProblems()
+      fetch("/api/problems").then(r => r.json()).then(d => {
+        if (Array.isArray(d)) setAllProblems(d)
+      })
     }
-  }, [status, query, platform, difficulty, solvedBy, tag])
+  }, [status])
+
+  useEffect(() => {
+    if (status === "authenticated") fetchProblems()
+  }, [status, query, platform, difficulty, solvedBy, selectedTags])
 
   const fetchProblems = async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (query) params.append("query", query)
-      if (platform && platform !== "All Platforms" && platform !== "all") params.append("platform", platform)
-      if (difficulty && difficulty !== "All Difficulties" && difficulty !== "all") params.append("difficulty", difficulty)
-      if (solvedBy && solvedBy !== "All" && solvedBy !== "all") params.append("solvedBy", solvedBy)
-      if (tag) params.append("tag", tag)
-      
-      const res = await fetch(`/api/problems?${params.toString()}`)
+      if (platform) params.append("platform", platform)
+      if (difficulty) params.append("difficulty", difficulty)
+      if (solvedBy) params.append("solvedBy", solvedBy)
+      // Send each selected tag; API filters by `has` so we apply client-side for multi
+      const res = await fetch(`/api/problems?${params}`)
       const data = await res.json()
-      
-      if (Array.isArray(data)) {
-        setProblems(data)
-      } else {
-        console.error("API Error:", data)
-        setProblems([])
-      }
-    } catch (e) {
-      console.error(e)
+      const filtered = Array.isArray(data) ? data : []
+      // Client-side multi-tag filter (API only supports single tag)
+      setProblems(
+        selectedTags.length === 0
+          ? filtered
+          : filtered.filter((p: any) => selectedTags.every(t => p.tags?.includes(t)))
+      )
+    } catch {
+      setProblems([])
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this problem?")) return;
-    try {
-      const res = await fetch(`/api/problems/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        setProblems(problems.filter(p => p.id !== id))
-      } else {
-        console.error("Failed to delete problem")
-      }
-    } catch (e) {
-      console.error("Failed to delete problem:", e)
+    if (!confirm("Delete this problem?")) return
+    const res = await fetch(`/api/problems/${id}`, { method: "DELETE" })
+    if (res.ok) {
+      setProblems(p => p.filter(x => x.id !== id))
+      setAllProblems(p => p.filter(x => x.id !== id))
     }
   }
 
-  const container: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  };
-
-  const item: Variants = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-  };
-
-  if (status === "loading") return <div className="p-8 text-center">Loading...</div>
+  if (status === "loading") return null
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold">My Problems</h1>
-        <Link href="/problems/new">
-          <Button>Log New Problem</Button>
-        </Link>
+    <div className="space-y-8">
+
+      {/* Header */}
+      <div className="flex items-center justify-between py-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">My Problems</h1>
+          <p className="text-sm text-muted-foreground mt-1">{problems.length} problem{problems.length !== 1 ? "s" : ""} logged</p>
+        </div>
+        <Button asChild>
+          <Link href="/problems/new"><Plus className="w-4 h-4 mr-2" />Log Problem</Link>
+        </Button>
       </div>
 
-      <div className="flex flex-wrap gap-4 bg-card p-4 rounded-xl border shadow-sm items-center">
-        <Input 
-          placeholder="Search by title..." 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 pb-4 border-b border-border">
+        <Input
+          placeholder="Search title…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-[200px]"
+          onChange={e => setQuery(e.target.value)}
+          className="w-48"
         />
-        <Input 
-          placeholder="Filter by tag..." 
-          value={tag}
-          onChange={(e) => setTag(e.target.value)}
-          className="max-w-[150px]"
-        />
-        <Select value={platform} onValueChange={(val) => setPlatform(val || "All Platforms")}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Platform" />
+        <TagFilter allTags={allTags} selectedTags={selectedTags} onChange={setSelectedTags} />
+        <Select value={platform} onValueChange={v => setPlatform(v === "_all" ? "" : v)}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All platforms" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All Platforms">All Platforms</SelectItem>
+            <SelectItem value="_all">All platforms</SelectItem>
             <SelectItem value="LeetCode">LeetCode</SelectItem>
             <SelectItem value="Codeforces">Codeforces</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={difficulty} onValueChange={(val) => setDifficulty(val || "All Difficulties")}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Difficulty" />
+        <Select value={difficulty} onValueChange={v => setDifficulty(v === "_all" ? "" : v)}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="All difficulties" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All Difficulties">All Difficulties</SelectItem>
+            <SelectItem value="_all">All difficulties</SelectItem>
             <SelectItem value="Easy">Easy</SelectItem>
             <SelectItem value="Medium">Medium</SelectItem>
             <SelectItem value="Hard">Hard</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={solvedBy} onValueChange={(val) => setSolvedBy(val || "All")}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Solved By" />
+        <Select value={solvedBy} onValueChange={v => setSolvedBy(v === "_all" ? "" : v)}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="All">All</SelectItem>
-            <SelectItem value="by me">By Me</SelectItem>
+            <SelectItem value="_all">All</SelectItem>
+            <SelectItem value="by me">By me</SelectItem>
             <SelectItem value="editorial">Editorial</SelectItem>
-            <SelectItem value="AI assisted">AI Assisted</SelectItem>
+            <SelectItem value="AI assisted">AI assisted</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {/* List */}
       {loading ? (
-        <div className="text-center p-8">Loading problems...</div>
+        <div className="py-20 text-center text-muted-foreground">Loading…</div>
       ) : problems.length === 0 ? (
-        <div className="text-center p-12 bg-card rounded-xl border border-dashed">
-          <h3 className="text-lg font-semibold mb-2">No problems found</h3>
-          <p className="text-muted-foreground mb-4">You haven't logged any problems matching your filters.</p>
-          <Link href="/problems/new">
-            <Button variant="outline">Log your first problem</Button>
-          </Link>
+        <div className="py-24 text-center border border-dashed border-border rounded-lg space-y-4">
+          <p className="text-base font-medium">No problems found</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your filters or log a new problem.</p>
+          <Button variant="outline" asChild>
+            <Link href="/problems/new">Log your first problem</Link>
+          </Button>
         </div>
       ) : (
-        <motion.div 
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {problems.map((problem: any) => (
-            <motion.div key={problem.id} variants={item}>
-              <Card className="h-full overflow-hidden border-white/10 bg-card/40 backdrop-blur-xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(59,130,246,0.12)] hover:border-blue-500/30 transition-all duration-300 group">
-                <CardHeader className="pb-3 border-b border-white/5 bg-white/5 dark:bg-black/20">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">
-                    <a href={problem.url} target="_blank" rel="noreferrer" className="hover:underline text-primary">
-                      {problem.title}
-                    </a>
-                  </CardTitle>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    problem.difficulty === "Easy" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
-                    problem.difficulty === "Medium" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
-                    problem.difficulty === "Hard" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                    "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                  }`}>
-                    {problem.difficulty}
-                  </span>
-                </div>
-                <div className="text-sm text-muted-foreground flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <span>{problem.platform}</span>
-                    <span>•</span>
-                    <span className="capitalize">{problem.solvedBy}</span>
-                  </div>
-                  <span>{new Date(problem.createdAt).toLocaleDateString()}</span>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                {problem.tags && problem.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {problem.tags.slice(0, 3).map((tag: string) => (
-                      <span key={tag} className="text-xs px-2 py-1 bg-secondary rounded-md">
-                        {tag}
-                      </span>
-                    ))}
-                    {problem.tags.length > 3 && (
-                      <span className="text-xs px-2 py-1 bg-secondary rounded-md">+{problem.tags.length - 3}</span>
+        <div className="rounded-lg border border-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-card">
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground w-full">Problem</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:table-cell">Platform</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap hidden md:table-cell">Difficulty</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap hidden lg:table-cell">Tags</th>
+                <th className="text-left px-5 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap hidden lg:table-cell">Solved by</th>
+                <th className="px-5 py-3 text-xs font-medium text-muted-foreground whitespace-nowrap hidden sm:table-cell">Date</th>
+                <th className="px-3 py-3 w-16" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {problems.map((p: any) => (
+                <tr key={p.id} className="bg-background hover:bg-card transition-colors group">
+                  <td className="px-5 py-4">
+                    <div className="flex items-start gap-1.5">
+                      <a href={p.url} target="_blank" rel="noreferrer" className="font-medium text-foreground hover:text-primary transition-colors leading-snug">
+                        {p.title}
+                      </a>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 sm:hidden">
+                      <span className="text-xs text-muted-foreground">{p.platform}</span>
+                      {p.difficulty && (
+                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${DIFFICULTY_STYLE[p.difficulty] ?? "text-muted-foreground bg-muted"}`}>
+                          {p.difficulty}
+                        </span>
+                      )}
+                    </div>
+                    {p.keyInsights && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1 hidden md:block">{p.keyInsights}</p>
                     )}
-                  </div>
-                )}
-                
-                {problem.keyInsights && (
-                  <div>
-                    <h4 className="text-sm font-semibold">Key Insights</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{problem.keyInsights}</p>
-                  </div>
-                )}
-                
-                {problem.mistakes && (
-                  <div>
-                    <h4 className="text-sm font-semibold text-red-400">Mistakes</h4>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{problem.mistakes}</p>
-                  </div>
-                )}
-                
-                <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
-                  <Link href={`/problems/${problem.id}/edit`}>
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-primary">
-                      <Edit className="h-4 w-4 mr-1" /> Edit
-                    </Button>
-                  </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-8 px-2 text-muted-foreground hover:text-red-500"
-                    onClick={() => handleDelete(problem.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete
-                  </Button>
-                </div>
-              </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
+                  </td>
+                  <td className="px-5 py-4 text-muted-foreground hidden sm:table-cell whitespace-nowrap">{p.platform}</td>
+                  <td className="px-5 py-4 hidden md:table-cell">
+                    {p.difficulty && (
+                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${DIFFICULTY_STYLE[p.difficulty] ?? "text-muted-foreground bg-muted"}`}>
+                        {p.difficulty}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 hidden lg:table-cell">
+                    <div className="flex flex-wrap gap-1">
+                      {p.tags?.slice(0, 3).map((t: string) => (
+                        <span key={t} className="text-xs px-2 py-0.5 rounded bg-secondary text-secondary-foreground">{t}</span>
+                      ))}
+                      {p.tags?.length > 3 && (
+                        <span className="text-xs text-muted-foreground">+{p.tags.length - 3}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-xs text-muted-foreground hidden lg:table-cell whitespace-nowrap capitalize">{p.solvedBy}</td>
+                  <td className="px-5 py-4 text-xs text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                    {new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </td>
+                  <td className="px-3 py-4">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <Link href={`/problems/${p.id}/edit`}><Edit className="w-3.5 h-3.5" /></Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(p.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

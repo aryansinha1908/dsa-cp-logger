@@ -3,22 +3,23 @@
 import { useState, useEffect, use } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Link from "next/link"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
 export default function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const { id } = use(params)
   const { status } = useSession()
   const router = useRouter()
-  
+
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState("")
-  
+
   const [formData, setFormData] = useState({
     title: "",
     platform: "",
@@ -26,19 +27,15 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
     solvedBy: "by me",
     tags: [] as string[],
     keyInsights: "",
-    mistakes: ""
+    mistakes: "",
   })
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/")
-    }
+    if (status === "unauthenticated") router.push("/")
   }, [status, router])
 
   useEffect(() => {
-    if (status === "authenticated" && id) {
-      fetchProblemDetails()
-    }
+    if (status === "authenticated" && id) fetchProblemDetails()
   }, [status, id])
 
   const fetchProblemDetails = async () => {
@@ -46,20 +43,17 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
     setError("")
     try {
       const res = await fetch(`/api/problems/${id}`)
-      if (!res.ok) {
-        throw new Error("Failed to fetch problem details")
-      }
+      if (!res.ok) throw new Error("Failed to fetch problem")
       const data = await res.json()
-      
-      setUrl(data.url || "")
+      setUrl(data.url ?? "")
       setFormData({
-        title: data.title || "",
-        platform: data.platform || "",
-        difficulty: data.difficulty || "Medium",
-        solvedBy: data.solvedBy || "by me",
-        tags: data.tags || [],
-        keyInsights: data.keyInsights || "",
-        mistakes: data.mistakes || ""
+        title: data.title ?? "",
+        platform: data.platform ?? "",
+        difficulty: data.difficulty ?? "Medium",
+        solvedBy: data.solvedBy ?? "by me",
+        tags: data.tags ?? [],
+        keyInsights: data.keyInsights ?? "",
+        mistakes: data.mistakes ?? "",
       })
     } catch (e: any) {
       setError(e.message)
@@ -72,22 +66,16 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
     e.preventDefault()
     setSubmitting(true)
     setError("")
-    
     try {
       const res = await fetch(`/api/problems/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url,
-          ...formData
-        })
+        body: JSON.stringify({ url, ...formData }),
       })
-      
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || "Failed to update problem")
       }
-      
       router.push("/problems")
     } catch (e: any) {
       setError(e.message)
@@ -95,51 +83,47 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
     }
   }
 
-  if (status === "loading" || loading) return <div className="p-8 text-center">Loading...</div>
+  if (status === "loading" || loading) return null
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <Card className="border shadow-md">
-        <CardHeader>
-          <CardTitle className="text-2xl">Edit Problem</CardTitle>
-          <CardDescription>
-            Update your insights, mistakes, or other problem details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="url">Problem URL</Label>
-              <Input 
+    <div className="max-w-3xl mx-auto py-10 space-y-8">
+
+      {/* Header */}
+      <div className="space-y-1">
+        <Link href="/problems" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to problems
+        </Link>
+        <h1 className="text-xl font-semibold tracking-tight">Edit problem</h1>
+        <p className="text-sm text-muted-foreground">Update your notes, insights, or other details.</p>
+      </div>
+
+      <div className="border border-border rounded-lg overflow-hidden">
+        <form onSubmit={handleSubmit}>
+          <div className="p-8 space-y-6">
+
+            {/* URL */}
+            <div className="space-y-1.5">
+              <Label htmlFor="url" className="text-xs">Problem URL</Label>
+              <Input
                 id="url"
-                placeholder="https://leetcode.com/problems/two-sum/" 
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={e => setUrl(e.target.value)}
                 required
+                className="text-sm"
               />
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input 
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  required
-                />
+            {/* Title + Platform */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-xs">Title</Label>
+                <Input id="title" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="text-sm" />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="platform">Platform</Label>
-                <Select 
-                  value={formData.platform} 
-                  onValueChange={(val) => setFormData({...formData, platform: val || ""})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select platform" />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Platform</Label>
+                <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v })}>
+                  <SelectTrigger className="text-sm"><SelectValue placeholder="Select platform" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LeetCode">LeetCode</SelectItem>
                     <SelectItem value="Codeforces">Codeforces</SelectItem>
@@ -150,16 +134,12 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty</Label>
-                <Select 
-                  value={formData.difficulty} 
-                  onValueChange={(val) => setFormData({...formData, difficulty: val || "Medium"})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select difficulty" />
-                  </SelectTrigger>
+            {/* Difficulty + Solved By */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Difficulty</Label>
+                <Select value={formData.difficulty} onValueChange={v => setFormData({ ...formData, difficulty: v })}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Easy">Easy</SelectItem>
                     <SelectItem value="Medium">Medium</SelectItem>
@@ -167,68 +147,69 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="solvedBy">Solved By</Label>
-                <Select 
-                  value={formData.solvedBy} 
-                  onValueChange={(val) => setFormData({...formData, solvedBy: val || "by me"})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select who solved this" />
-                  </SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Solved by</Label>
+                <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v })}>
+                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="by me">By Me</SelectItem>
+                    <SelectItem value="by me">By me</SelectItem>
                     <SelectItem value="editorial">Editorial</SelectItem>
-                    <SelectItem value="AI assisted">AI Assisted</SelectItem>
+                    <SelectItem value="AI assisted">AI assisted</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input 
+            {/* Tags */}
+            <div className="space-y-1.5">
+              <Label htmlFor="tags" className="text-xs">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+              <Input
                 id="tags"
-                placeholder="binary search, dynamic programming..."
+                placeholder="binary search, dynamic programming…"
                 value={formData.tags.join(", ")}
-                onChange={(e) => setFormData({...formData, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean)})}
+                onChange={e => setFormData({ ...formData, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })}
+                className="text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="insights">Key Insights</Label>
-              <textarea 
+            {/* Key Insights */}
+            <div className="space-y-1.5">
+              <Label htmlFor="insights" className="text-xs">Key insights</Label>
+              <textarea
                 id="insights"
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="What was the trick to solving this?"
+                rows={3}
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                placeholder="What was the key insight to solve this?"
                 value={formData.keyInsights}
-                onChange={(e) => setFormData({...formData, keyInsights: e.target.value})}
+                onChange={e => setFormData({ ...formData, keyInsights: e.target.value })}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="mistakes">Mistakes & Pitfalls</Label>
-              <textarea 
+            {/* Mistakes */}
+            <div className="space-y-1.5">
+              <Label htmlFor="mistakes" className="text-xs">Mistakes & pitfalls</Label>
+              <textarea
                 id="mistakes"
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="What edge cases did you miss?"
+                rows={3}
+                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                placeholder="What edge cases or mistakes should you remember?"
                 value={formData.mistakes}
-                onChange={(e) => setFormData({...formData, mistakes: e.target.value})}
+                onChange={e => setFormData({ ...formData, mistakes: e.target.value })}
               />
             </div>
+          </div>
 
-            <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4 border-t border-white/5">
-              <Button type="button" variant="outline" onClick={() => router.push("/problems")} disabled={submitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? "Saving..." : "Save changes"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border bg-card flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" asChild>
+              <Link href="/problems">Cancel</Link>
+            </Button>
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Saving…</> : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
