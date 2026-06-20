@@ -125,7 +125,7 @@ export default function NewProblemPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Platform</Label>
-                <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v })}>
+                <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v ?? "" })}>
                   <SelectTrigger className="text-sm"><SelectValue placeholder="Select platform" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LeetCode">LeetCode</SelectItem>
@@ -145,7 +145,7 @@ export default function NewProblemPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Solved by</Label>
-                <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v })}>
+                <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v ?? "by me" })}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="by me">By me</SelectItem>

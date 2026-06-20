@@ -198,7 +198,7 @@ export default function ProblemsPage() {
           className="w-48"
         />
         <TagFilter allTags={allTags} selectedTags={selectedTags} onChange={setSelectedTags} />
-        <Select value={platform} onValueChange={v => setPlatform(v === "_all" ? "" : v)}>
+        <Select value={platform} onValueChange={v => setPlatform(!v || v === "_all" ? "" : v)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All platforms" />
           </SelectTrigger>
@@ -208,7 +208,7 @@ export default function ProblemsPage() {
             <SelectItem value="Codeforces">Codeforces</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={difficulty} onValueChange={v => setDifficulty(v === "_all" ? "" : v)}>
+        <Select value={difficulty} onValueChange={v => setDifficulty(!v || v === "_all" ? "" : v)}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="All difficulties" />
           </SelectTrigger>
@@ -219,7 +219,7 @@ export default function ProblemsPage() {
             <SelectItem value="Hard">Hard</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={solvedBy} onValueChange={v => setSolvedBy(v === "_all" ? "" : v)}>
+        <Select value={solvedBy} onValueChange={v => setSolvedBy(!v || v === "_all" ? "" : v)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="All" />
           </SelectTrigger>
