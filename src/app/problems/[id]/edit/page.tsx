@@ -122,7 +122,7 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Platform</Label>
-                <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v })}>
+                <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v ?? "" })}>
                   <SelectTrigger className="text-sm"><SelectValue placeholder="Select platform" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LeetCode">LeetCode</SelectItem>
@@ -138,7 +138,7 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Difficulty</Label>
-                <Select value={formData.difficulty} onValueChange={v => setFormData({ ...formData, difficulty: v })}>
+                <Select value={formData.difficulty} onValueChange={v => setFormData({ ...formData, difficulty: v ?? "Medium" })}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Easy">Easy</SelectItem>
@@ -149,7 +149,7 @@ export default function EditProblemPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Solved by</Label>
-                <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v })}>
+                <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v ?? "by me" })}>
                   <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="by me">By me</SelectItem>
