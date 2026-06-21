@@ -87,20 +87,20 @@ export default function NewProblemPage() {
 
       {/* Header */}
       <div className="space-y-1">
-        <Link href="/problems" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-4">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to problems
+        <Link href="/problems" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4">
+          <ArrowLeft className="w-4 h-4" /> Back to problems
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Log a problem</h1>
-        <p className="text-sm text-muted-foreground">Paste a LeetCode or Codeforces URL to auto-fill the details.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Log a problem</h1>
+        <p className="text-base text-muted-foreground">Paste a LeetCode or Codeforces URL to auto-fill the details.</p>
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border rounded-2xl overflow-hidden" style={{ fontFamily: "var(--font-jetbrains-mono), monospace" }}>
         <form onSubmit={handleSubmit}>
           <div className="p-8 space-y-6">
 
             {/* URL + Fetch */}
-            <div className="space-y-1.5">
-              <Label htmlFor="url" className="text-xs">Problem URL</Label>
+            <div className="space-y-2">
+              <Label htmlFor="url" className="text-sm font-medium">Problem URL</Label>
               <div className="flex gap-2">
                 <Input
                   id="url"
@@ -108,25 +108,25 @@ export default function NewProblemPage() {
                   value={url}
                   onChange={e => setUrl(e.target.value)}
                   required
-                  className="text-sm"
+                  className="text-base rounded-xl h-11"
                 />
-                <Button type="button" variant="outline" size="sm" onClick={fetchMetadata} disabled={loadingMeta || !url} className="shrink-0">
-                  {loadingMeta ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Fetch"}
+                <Button type="button" variant="outline" onClick={fetchMetadata} disabled={loadingMeta || !url} className="shrink-0 rounded-xl h-11 px-5 text-base">
+                  {loadingMeta ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
                 </Button>
               </div>
-              {error && <p className="text-xs text-destructive">{error}</p>}
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
 
             {/* Title + Platform */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-xs">Title</Label>
-                <Input id="title" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="text-sm" />
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">Title</Label>
+                <Input id="title" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="text-base rounded-xl h-11" />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Platform</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Platform</Label>
                 <Select value={formData.platform} onValueChange={v => setFormData({ ...formData, platform: v ?? "" })}>
-                  <SelectTrigger className="text-sm"><SelectValue placeholder="Select platform" /></SelectTrigger>
+                  <SelectTrigger className="text-base rounded-xl h-11"><SelectValue placeholder="Select platform" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LeetCode">LeetCode</SelectItem>
                     <SelectItem value="Codeforces">Codeforces</SelectItem>
@@ -139,14 +139,14 @@ export default function NewProblemPage() {
 
             {/* Difficulty + Solved By */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Difficulty</Label>
-                <Input value={formData.difficulty} readOnly className="text-sm bg-muted cursor-not-allowed text-muted-foreground" />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Difficulty</Label>
+                <Input value={formData.difficulty} readOnly className="text-base rounded-xl h-11 bg-muted cursor-not-allowed text-muted-foreground" />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Solved by</Label>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Solved by</Label>
                 <Select value={formData.solvedBy} onValueChange={v => setFormData({ ...formData, solvedBy: v ?? "by me" })}>
-                  <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="text-base rounded-xl h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="by me">By me</SelectItem>
                     <SelectItem value="editorial">Editorial</SelectItem>
@@ -157,24 +157,24 @@ export default function NewProblemPage() {
             </div>
 
             {/* Tags */}
-            <div className="space-y-1.5">
-              <Label htmlFor="tags" className="text-xs">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+            <div className="space-y-2">
+              <Label htmlFor="tags" className="text-sm font-medium">Tags <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
               <Input
                 id="tags"
                 placeholder="binary search, dynamic programming…"
                 value={formData.tags.join(", ")}
                 onChange={e => setFormData({ ...formData, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) })}
-                className="text-sm"
+                className="text-base rounded-xl h-11"
               />
             </div>
 
             {/* Key Insights */}
-            <div className="space-y-1.5">
-              <Label htmlFor="insights" className="text-xs">Key insights</Label>
+            <div className="space-y-2">
+              <Label htmlFor="insights" className="text-sm font-medium">Key insights</Label>
               <textarea
                 id="insights"
                 rows={3}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                className="w-full rounded-xl border border-input bg-transparent px-3 py-2.5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
                 placeholder="What was the key insight to solve this?"
                 value={formData.keyInsights}
                 onChange={e => setFormData({ ...formData, keyInsights: e.target.value })}
@@ -182,12 +182,12 @@ export default function NewProblemPage() {
             </div>
 
             {/* Mistakes */}
-            <div className="space-y-1.5">
-              <Label htmlFor="mistakes" className="text-xs">Mistakes & pitfalls</Label>
+            <div className="space-y-2">
+              <Label htmlFor="mistakes" className="text-sm font-medium">Mistakes & pitfalls</Label>
               <textarea
                 id="mistakes"
                 rows={3}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                className="w-full rounded-xl border border-input bg-transparent px-3 py-2.5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
                 placeholder="What edge cases or mistakes should you remember?"
                 value={formData.mistakes}
                 onChange={e => setFormData({ ...formData, mistakes: e.target.value })}
@@ -197,11 +197,11 @@ export default function NewProblemPage() {
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border bg-card flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" asChild>
+            <Button type="button" variant="ghost" asChild className="rounded-xl text-base">
               <Link href="/problems">Cancel</Link>
             </Button>
-            <Button type="submit" size="sm" disabled={submitting}>
-              {submitting ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Saving…</> : "Log problem"}
+            <Button type="submit" disabled={submitting} className="rounded-xl text-base px-6">
+              {submitting ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving…</> : "Log problem"}
             </Button>
           </div>
         </form>
